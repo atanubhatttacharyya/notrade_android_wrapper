@@ -1,0 +1,38 @@
+workflows:
+  android-debug:
+    name: Elevate Android APK
+    max_build_duration: 30
+    instance_type: linux_x2
+    environment:
+      java: 17
+    scripts:
+      - name: Make Gradle launcher executable
+        script: |
+          chmod +x gradlew
+      - name: Set Android SDK location
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+      - name: Build APK
+        script: |
+          ./gradlew assembleDebug
+    artifacts:
+      - app/build/outputs/apk/debug/*.apk
+
+  android-release-unsigned:
+    name: Elevate Android Release AAB
+    max_build_duration: 30
+    instance_type: linux_x2
+    environment:
+      java: 17
+    scripts:
+      - name: Make Gradle launcher executable
+        script: |
+          chmod +x gradlew
+      - name: Set Android SDK location
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+      - name: Build release bundle
+        script: |
+          ./gradlew bundleRelease
+    artifacts:
+      - app/build/outputs/bundle/release/*.aab
