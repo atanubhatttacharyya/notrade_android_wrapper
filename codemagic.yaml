@@ -1,38 +1,30 @@
 workflows:
   android-debug:
-    name: Elevate Android APK
+    name: Elevate Android WebView Debug APK
     max_build_duration: 30
     instance_type: mac_mini_m2
     environment:
       java: 17
     scripts:
-      - name: Make Gradle launcher executable
+      - name: Check toolchain
         script: |
-          chmod +x gradlew
-      - name: Set Android SDK location
+          java -version
+          gradle --version
+      - name: Build WebView debug APK
         script: |
-          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
-      - name: Build APK
-        script: |
-          ./gradlew assembleDebug
+          gradle --no-daemon assembleDebug
     artifacts:
       - app/build/outputs/apk/debug/*.apk
 
   android-release-unsigned:
-    name: Elevate Android Release AAB
+    name: Elevate Android WebView Release Bundle (unsigned)
     max_build_duration: 30
-    instance_type: linux_x2
+    instance_type: mac_mini_m2
     environment:
       java: 17
     scripts:
-      - name: Make Gradle launcher executable
-        script: |
-          chmod +x gradlew
-      - name: Set Android SDK location
-        script: |
-          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
       - name: Build release bundle
         script: |
-          ./gradlew bundleRelease
+          gradle --no-daemon bundleRelease
     artifacts:
       - app/build/outputs/bundle/release/*.aab

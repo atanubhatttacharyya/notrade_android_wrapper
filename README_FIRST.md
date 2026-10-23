@@ -1,66 +1,31 @@
-# Elevate Option Trading — Codemagic Android Wrapper
+# Elevate Android WebView Wrapper with Native Google Sign-In
 
-This is a native Android WebView wrapper for the Elevate Option Trading Flask application.
+This is a replacement Android wrapper project for `https://notrade.myelevateapps.com` using a native Android WebView for the app UI and Google Play Services for Google account authentication. It keeps the existing package ID `com.elevate.optiontrading`.
 
-## Server URL
+## Why Google sign-in is native
+Google blocks/limits Google Identity Services sign-in inside embedded WebViews. This wrapper intercepts the existing Elevate Welcome-page Google buttons, opens the native Google account chooser, obtains an ID token, and submits that token to Elevate's existing server endpoints. The WebView remains the main app UI. It does not embed Google's sign-in page inside the WebView.
 
-The wrapper currently points to:
+## Required configuration before building
 
-`https://notrade.myelevateapps.com`
+1. In Elevate Admin Settings, find the Google OAuth **Web application Client ID** already configured for Elevate.
+2. Replace `REPLACE_WITH_WEB_CLIENT_ID.apps.googleusercontent.com` in `app/src/main/res/values/strings.xml` with that exact Web Client ID.
+3. In Google Cloud Console, ensure there is an Android OAuth client for package `com.elevate.optiontrading` and the SHA-1 signing fingerprint used by the APK. The Web Client ID is used for the ID token audience; the Android OAuth client must match the package and signing certificate. Debug and release signing certificates may have different SHA-1 fingerprints.
+4. Commit the contents of this folder to a new branch in `atanubhatttacharyya/twa_android_wrapper` (or build from a separate branch/repository). The Codemagic workflow can use the existing Gradle build configuration; build with `gradle --no-daemon assembleDebug`.
+5. Install and test the new APK. Do not overwrite the working APK until native Google sign-in, login, registration, account modification, session handling, and sign-out have been tested.
 
-To change the server later, edit **one line** in:
+## Important implementation notes
 
-`gradle.properties`
+- Website: `https://notrade.myelevateapps.com`
+- Android application ID: `com.elevate.optiontrading`
+- App label: `Elevate Option Trading`
+- Minimum SDK: 23; compile/target SDK: 35; Java 17.
+- The wrapper calls the existing server endpoints `/login`, `/auth/google/register`, `/auth/google/modify/verify`, and `/auth/google/modify/update` using the Google ID token. It transfers the returned Elevate session cookie into the WebView for login.
+- The wrapper does not change AWS or Flask code.
+- Google OAuth configuration and Android signing fingerprints must be correct for the native Google sign-in flow to work.
+- This source ZIP has not been built in Codemagic or tested on a physical phone in this environment. Test it on a separate build before replacing the current app.
 
-```properties
-ELEVATE_BASE_URL=https://your-domain.example
-```
+## Google authentication blocker (must be completed before a working APK)
 
-No Java code needs to be changed.
+The included source deliberately does not invent OAuth credentials. The current `strings.xml` contains a placeholder Web Client ID, so Google authentication cannot complete until the real Web application Client ID used by the Elevate backend is inserted. Also register the Android OAuth client for package `com.elevate.optiontrading` and the signing certificate SHA-1 used by the build. A wrong/missing ID or fingerprint commonly causes the Google account picker/token flow to fail. This is an OAuth configuration dependency, not a WebView permission issue.
 
-## Fastest way to get an APK with Codemagic
-
-1. Unzip this project.
-2. Put the whole folder in a GitHub repository.
-3. In Codemagic, choose **Add application** and connect that repository.
-4. Select **codemagic.yaml** configuration.
-5. Choose workflow **Elevate Android APK** (`android-debug`).
-6. Start the build.
-7. Download `app-debug.apk` from Codemagic Artifacts.
-
-The debug APK is suitable for installing/testing on Android devices.
-
-## What the wrapper supports
-
-- Elevate login sessions and cookies persist inside the WebView.
-- JavaScript and local/session storage are enabled.
-- Zerodha/Kite web redirects can stay inside the app.
-- Android Back navigates WebView history before closing the app.
-- File upload chooser is supported.
-- Authenticated downloads pass WebView cookies into Android DownloadManager.
-- tel:, mailto:, tg:, intent: and other non-web links open in their Android apps.
-- Invalid HTTPS certificates are rejected, not bypassed.
-- Both portrait and landscape are allowed.
-- Cleartext HTTP is disabled because Elevate uses HTTPS.
-
-## HTTPS configuration
-
-This build is configured for the live HTTPS service:
-
-`https://notrade.myelevateapps.com`
-
-Cleartext HTTP traffic is disabled in the Android manifest.
-
-## Google Play release
-
-The included `android-release-unsigned` workflow can create an AAB, but Google Play
-distribution should use a proper Android signing keystore. Add the keystore in Codemagic
-and wire the Codemagic `CM_KEYSTORE_*` environment values for a signed release build.
-
-## Package name
-
-`com.elevate.optiontrading`
-
-## Visible app name
-
-`Elevate Option Trading`
+The native bridge now validates the configured ID before attempting sign-in and displays a clear message if it is missing; it also handles devices where Google Play Services sign-in cannot be launched. Do not publish this placeholder-configured build as a working Google-auth build.

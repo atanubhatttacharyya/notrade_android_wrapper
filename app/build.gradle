@@ -2,44 +2,16 @@ plugins {
     id 'com.android.application'
 }
 
-def elevateBaseUrl = project.findProperty("ELEVATE_BASE_URL") ?: "https://notrade.myelevateapps.com"
-
 android {
     namespace 'com.elevate.optiontrading'
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.elevate.optiontrading"
-        minSdk 26
+        applicationId 'com.elevate.optiontrading'
+        minSdk 23
         targetSdk 35
-        versionCode 1
-        versionName "1.0.0"
-
-        buildConfigField "String", "ELEVATE_BASE_URL", "\"${elevateBaseUrl}\""
-    }
-
-    buildFeatures {
-        buildConfig true
-    }
-
-    buildTypes {
-        debug {
-            debuggable true
-        }
-        release {
-            minifyEnabled false
-            shrinkResources false
-
-            // Codemagic will inject these when a signing configuration is added later.
-            if (System.getenv("CM_KEYSTORE_PATH")) {
-                signingConfig signingConfigs.create("codemagicRelease") {
-                    storeFile file(System.getenv("CM_KEYSTORE_PATH"))
-                    storePassword System.getenv("CM_KEYSTORE_PASSWORD")
-                    keyAlias System.getenv("CM_KEY_ALIAS")
-                    keyPassword System.getenv("CM_KEY_PASSWORD")
-                }
-            }
-        }
+        versionCode 2
+        versionName '2.0.0-webview'
     }
 
     compileOptions {
@@ -49,4 +21,5 @@ android {
 }
 
 dependencies {
+    implementation 'com.google.android.gms:play-services-auth:21.3.0'
 }
