@@ -7,9 +7,9 @@ Google blocks/limits Google Identity Services sign-in inside embedded WebViews. 
 
 ## Required configuration before building
 
-1. In Elevate Admin Settings, find the Google OAuth **Web application Client ID** already configured for Elevate.
-2. Replace `REPLACE_WITH_WEB_CLIENT_ID.apps.googleusercontent.com` in `app/src/main/res/values/strings.xml` with that exact Web Client ID.
-3. In Google Cloud Console, ensure there is an Android OAuth client for package `com.elevate.optiontrading` and the SHA-1 signing fingerprint used by the APK. The Web Client ID is used for the ID token audience; the Android OAuth client must match the package and signing certificate. Debug and release signing certificates may have different SHA-1 fingerprints.
+1. In Elevate Admin Settings, find the Google OAuth **Web application Client ID** configured for Elevate.
+2. Confirm `app/src/main/res/values/strings.xml` contains that exact Web Client ID; it is used as the ID-token audience.
+3. In Google Cloud Console, ensure there is an Android OAuth client for package `com.elevate.optiontrading` and the SHA-1 signing fingerprint used by the APK. Debug and release signing certificates may have different SHA-1 fingerprints.
 4. Commit the contents of this folder to a new branch in `atanubhatttacharyya/twa_android_wrapper` (or build from a separate branch/repository). The Codemagic workflow can use the existing Gradle build configuration; build with `gradle --no-daemon assembleDebug`.
 5. Install and test the new APK. Do not overwrite the working APK until native Google sign-in, login, registration, account modification, session handling, and sign-out have been tested.
 
@@ -26,6 +26,6 @@ Google blocks/limits Google Identity Services sign-in inside embedded WebViews. 
 
 ## Google authentication blocker (must be completed before a working APK)
 
-The included source deliberately does not invent OAuth credentials. The current `strings.xml` contains a placeholder Web Client ID, so Google authentication cannot complete until the real Web application Client ID used by the Elevate backend is inserted. Also register the Android OAuth client for package `com.elevate.optiontrading` and the signing certificate SHA-1 used by the build. A wrong/missing ID or fingerprint commonly causes the Google account picker/token flow to fail. This is an OAuth configuration dependency, not a WebView permission issue.
+Google authentication requires the Web Client ID in `strings.xml` to match the Web application Client ID configured on the Elevate backend, plus an Android OAuth client registered for package `com.elevate.optiontrading` and the APK signing certificate SHA-1. A wrong or missing Android package/fingerprint commonly causes account selection to fail with a developer configuration error. The app now displays Google sign-in errors in the login status area; a `DEVELOPER_ERROR` message means the Android OAuth client configuration must be corrected. This is an OAuth configuration dependency, not a WebView permission issue.
 
-The native bridge now validates the configured ID before attempting sign-in and displays a clear message if it is missing; it also handles devices where Google Play Services sign-in cannot be launched. Do not publish this placeholder-configured build as a working Google-auth build.
+The native bridge validates the configured ID before attempting sign-in and handles devices where Google Play Services sign-in cannot be launched. Login failures, including `DEVELOPER_ERROR`, are displayed in the login status area. This source change must be included in a newly built APK before testing the updated error feedback.

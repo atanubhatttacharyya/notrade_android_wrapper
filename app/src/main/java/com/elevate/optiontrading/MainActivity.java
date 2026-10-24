@@ -23,6 +23,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.CommonStatusCodes;
 
 import org.json.JSONObject;
 
@@ -139,7 +140,8 @@ public class MainActivity extends Activity {
         String js = "(function(){if(window.__elevateNativeAuthHook)return;window.__elevateNativeAuthHook=true;"
                 + "document.querySelectorAll('.google-slot').forEach(function(slot){var strip=function(){slot.querySelectorAll('iframe').forEach(function(frame){frame.remove();});};strip();if(window.MutationObserver)new MutationObserver(strip).observe(slot,{childList:true,subtree:true});});"
                 + "window.ElevateNativeResult={done:function(mode,ok,message,profile){try{"
-                + "if(mode==='register'){var e=document.getElementById('reg-error'),s=document.getElementById('reg-email-status');if(e){e.hidden=!!ok;e.textContent=ok?'':(message||'Google verification failed.');}if(s){s.dataset.submissionMessage='true';s.textContent=message|| (ok?'Registration complete.':'Google verification failed.');}}"
+                + "if(mode==='login'){var s=document.getElementById('login-google-status'),b=document.getElementById('login-submit');if(s)s.textContent=message|| (ok?'Google sign-in completed.':'Google sign-in failed.');if(b)b.disabled=true;}"
+                + "else if(mode==='register'){var e=document.getElementById('reg-error'),s=document.getElementById('reg-email-status');if(e){e.hidden=!!ok;e.textContent=ok?'':(message||'Google verification failed.');}if(s){s.dataset.submissionMessage='true';s.textContent=message|| (ok?'Registration complete.':'Google verification failed.');}}"
                 + "else if(mode==='modify'){var s=document.getElementById('modify-status'),f=document.getElementById('modify-profile-form'),sum=document.getElementById('modify-profile-summary'),empty=document.getElementById('modify-empty-state');if(s)s.textContent=message|| (ok?'Account details updated.':'Could not update account.');if(ok&&profile&&f){['username','email','first_name','last_name','phone','pincode'].forEach(function(k){var el=f.elements.namedItem(k);if(el&&profile[k]!=null)el.value=profile[k];});f.hidden=true;if(sum)sum.hidden=false;if(empty)empty.hidden=true;var n=document.getElementById('modify-summary-name'),em=document.getElementById('modify-summary-email'),ph=document.getElementById('modify-summary-phone');if(n)n.textContent=((profile.first_name||'')+' '+(profile.last_name||'')).trim();if(em)em.textContent=profile.email||'';if(ph)ph.textContent=profile.phone||'';}}"
                 + "}catch(e){console.error(e);}}};"
                 + "document.addEventListener('pointerdown',function(ev){var t=ev.target;var slot=t&&t.closest?t.closest('.google-slot'):null;if(!slot)return;var id=slot.id,mode=id==='google-login-button'?'login':id==='google-register-button'?'register':id==='google-modify-save-button'?'modify':'';if(!mode)return;var payload={};"
@@ -188,7 +190,10 @@ public class MainActivity extends Activity {
             final JSONObject payload = new JSONObject(pendingPayload.toString());
             network.execute(() -> processGoogleAuth(mode, payload, token));
         } catch (ApiException ex) {
-            showNativeResult(pendingMode, false, "Google sign-in was cancelled or failed (code " + ex.getStatusCode() + "). Check the OAuth client configuration and try again.", null);
+            String message = ex.getStatusCode() == CommonStatusCodes.DEVELOPER_ERROR
+                    ? "Google sign-in configuration error. Register package com.elevate.optiontrading and this APK signing certificate's SHA-1 in the Android OAuth client."
+                    : "Google sign-in was cancelled or failed (code " + ex.getStatusCode() + "). Check Google Play Services and the OAuth client configuration, then try again.";
+            showNativeResult(pendingMode, false, message, null);
         } catch (Exception ex) {
             showNativeResult(pendingMode, false, "Google sign-in could not be completed. Please try again.", null);
         }
